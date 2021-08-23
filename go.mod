@@ -1,3 +1,3 @@
-module gitlab.mgm-iot.com/horseman-A21/iotlog
+module gitlab.mgm-iot.com/Golibs/iotlog
 
 go 1.16
