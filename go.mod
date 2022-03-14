@@ -1,3 +1,3 @@
-module gitee.com/yuzhen-iot-team/iotlog
+module gitmiot.vip.cpolar.top/Libs-Go/iotlog
 
 go 1.16
