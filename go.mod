@@ -1,3 +1,3 @@
-module gitmiot.vip.cpolar.top/Libs-Go/iotlog
+module blacktea.vip.cpolar.top/OrgGo/simplelog
 
-go 1.16
+go 1.21.0

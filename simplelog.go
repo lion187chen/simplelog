@@ -1,21 +1,21 @@
+// Expanded from github.com/siddontang/go/tree/master/log
 //
 // It also supports different log handlers which you can log to stdout, file, socket, etc...
 //
-// Use
+// Usage
 //
-//  import "github.com/siddontang/go/log"
+//	import "blacktea.vip.cpolar.top/OrgGo/simplelog"
 //
-//  //log with different level
-//  log.Info("hello world")
-//  log.Error("hello world")
+//	//log with different level
+//	simplelog.Info("hello world")
+//	simplelog.Error("hello world")
 //
-//  //create a IotLog with specified handler
-//  h := NewStreamHandle(os.Stdout)
-//  l := log.NewDefault(h)
-//  l.Info("hello world")
-//  l.Infof("%s %d", "hello", 123)
-//
-package iotlog
+//	//create a simplelog with specified handler
+//	h := NewStreamHandle(os.Stdout)
+//	l := simplelog.NewDefault(h)
+//	l.Info("hello world")
+//	l.Infof("%s %d", "hello", 123)
+package simplelog
 
 import (
 	"fmt"
@@ -28,7 +28,7 @@ import (
 	"time"
 )
 
-//log level, from low to high, more high means more serious
+// log level, from low to high, more higher means more serious
 const (
 	LevelTrace = iota
 	LevelDebug
@@ -39,9 +39,9 @@ const (
 )
 
 const (
-	Ltime  = 1 << iota //time format "2006/01/02 15:04:05"
-	Lfile              //file.go:123
-	Llevel             //[Trace|Debug|Info...]
+	Ltime  = 1 << iota //print timestamp format as "2006/01/02 15:04:05"
+	Lfile              // print file name and line format as file.go:123
+	Llevel             // print log level format as [Trace|Debug|Info...]
 )
 
 var LevelName [6]string = [6]string{"Trace", "Debug", "Info ", "Warn ", "Error", "Fatal"}
@@ -60,7 +60,7 @@ func (i *atomicInt32) Get() int {
 	return int(atomic.LoadInt32((*int32)(i)))
 }
 
-type IotLog struct {
+type SimpleLog struct {
 	level atomicInt32
 	flag  int
 
@@ -76,19 +76,22 @@ type IotLog struct {
 // 初始化函数
 // 参数 name 为 log 文件名
 // 参数 level 为：
-//		LevelTrace
-//		LevelDebug
-//		LevelInfo
-//		LevelWarn
-//		LevelError
-//		LevelFatal
-//		其中之一
+//
+//	LevelTrace
+//	LevelDebug
+//	LevelInfo
+//	LevelWarn
+//	LevelError
+//	LevelFatal
+//	其中之一
+//
 // 参数 flag 可以为
-// 		log.Ltime
-// 		log.Lfile
-// 		log.Llevel
-//		的组合
-func (l *IotLog) Init(handler StreamHandler, level, flag int) *IotLog {
+//
+//	log.Ltime
+//	log.Lfile
+//	log.Llevel
+//	的组合
+func (l *SimpleLog) Init(handler StreamHandler, level, flag int) *SimpleLog {
 	l.level.Set(level)
 	l.handler = handler
 
@@ -100,7 +103,7 @@ func (l *IotLog) Init(handler StreamHandler, level, flag int) *IotLog {
 	return l
 }
 
-func (l *IotLog) InitStd(level, flag int) *IotLog {
+func (l *SimpleLog) InitStd(level, flag int) *SimpleLog {
 	handler, e := NewStreamHandle(os.Stdout)
 	if e != nil {
 		panic(e)
@@ -109,7 +112,7 @@ func (l *IotLog) InitStd(level, flag int) *IotLog {
 	return l.Init(handler, level, flag)
 }
 
-func (l *IotLog) InitFile(name string, level, flag int) *IotLog {
+func (l *SimpleLog) InitFile(name string, level, flag int) *SimpleLog {
 	handler, e := new(FileHandler).InitFile(name)
 	if e != nil {
 		panic(e)
@@ -118,7 +121,7 @@ func (l *IotLog) InitFile(name string, level, flag int) *IotLog {
 	return l.Init(handler, level, flag)
 }
 
-func (l *IotLog) InitRotating(name string, maxBytes, backupCount, level int) *IotLog {
+func (l *SimpleLog) InitRotating(name string, maxBytes, backupCount, level int) *SimpleLog {
 	handler, e := new(RotatingFileHandler).InitRotating(name, maxBytes, backupCount)
 	if e != nil {
 		panic(e)
@@ -127,7 +130,7 @@ func (l *IotLog) InitRotating(name string, maxBytes, backupCount, level int) *Io
 	return l.Init(handler, level, Ltime|Lfile|Llevel)
 }
 
-func (l *IotLog) InitTimedRotating(name string, when int8, interval, level int) *IotLog {
+func (l *SimpleLog) InitTimedRotating(name string, when int8, interval, level int) *SimpleLog {
 	handler, e := new(TimedRotatingFileHandler).InitTimedRotating(name, when, interval)
 	if e != nil {
 		panic(e)
@@ -136,7 +139,7 @@ func (l *IotLog) InitTimedRotating(name string, when int8, interval, level int) 
 	return l.Init(handler, level, Ltime|Lfile|Llevel)
 }
 
-func (l *IotLog) popBuf() []byte {
+func (l *SimpleLog) popBuf() []byte {
 	l.bufMutex.Lock()
 	var buf []byte
 	if len(l.bufs) == 0 {
@@ -150,7 +153,7 @@ func (l *IotLog) popBuf() []byte {
 	return buf
 }
 
-func (l *IotLog) putBuf(buf []byte) {
+func (l *SimpleLog) putBuf(buf []byte) {
 	l.bufMutex.Lock()
 	if len(l.bufs) < maxBufPoolSize {
 		buf = buf[0:0]
@@ -159,7 +162,7 @@ func (l *IotLog) putBuf(buf []byte) {
 	l.bufMutex.Unlock()
 }
 
-func (l *IotLog) Close() {
+func (l *SimpleLog) Close() {
 	if l.closed.Get() == 1 {
 		return
 	}
@@ -168,13 +171,13 @@ func (l *IotLog) Close() {
 	l.handler.Close()
 }
 
-//set log level, any log level less than it will not log
-func (l *IotLog) SetLevel(level int) {
+// set log level, any log level less than it will not log
+func (l *SimpleLog) SetLevel(level int) {
 	l.level.Set(level)
 }
 
 // name can be in ["trace", "debug", "info", "warn", "error", "fatal"]
-func (l *IotLog) SetLevelByName(name string) {
+func (l *SimpleLog) SetLevelByName(name string) {
 	name = strings.ToLower(name)
 	switch name {
 	case "trace":
@@ -192,7 +195,7 @@ func (l *IotLog) SetLevelByName(name string) {
 	}
 }
 
-func (l *IotLog) SetHandler(h StreamHandler) {
+func (l *SimpleLog) SetHandler(h StreamHandler) {
 	if l.closed.Get() == 1 {
 		return
 	}
@@ -205,7 +208,7 @@ func (l *IotLog) SetHandler(h StreamHandler) {
 	l.hMutex.Unlock()
 }
 
-func (l *IotLog) Output(callDepth int, level int, format string, v ...interface{}) {
+func (l *SimpleLog) Output(callDepth int, level int, format string, v ...interface{}) {
 	if l.closed.Get() == 1 {
 		// closed
 		return
@@ -273,62 +276,62 @@ func (l *IotLog) Output(callDepth int, level int, format string, v ...interface{
 	l.putBuf(buf)
 }
 
-//log with Trace level
-func (l *IotLog) Trace(v ...interface{}) {
+// log with Trace level
+func (l *SimpleLog) Trace(v ...interface{}) {
 	l.Output(2, LevelTrace, "", v...)
 }
 
-//log with Debug level
-func (l *IotLog) Debug(v ...interface{}) {
+// log with Debug level
+func (l *SimpleLog) Debug(v ...interface{}) {
 	l.Output(2, LevelDebug, "", v...)
 }
 
-//log with info level
-func (l *IotLog) Info(v ...interface{}) {
+// log with info level
+func (l *SimpleLog) Info(v ...interface{}) {
 	l.Output(2, LevelInfo, "", v...)
 }
 
-//log with warn level
-func (l *IotLog) Warn(v ...interface{}) {
+// log with warn level
+func (l *SimpleLog) Warn(v ...interface{}) {
 	l.Output(2, LevelWarn, "", v...)
 }
 
-//log with error level
-func (l *IotLog) Error(v ...interface{}) {
+// log with error level
+func (l *SimpleLog) Error(v ...interface{}) {
 	l.Output(2, LevelError, "", v...)
 }
 
-//log with fatal level
-func (l *IotLog) Fatal(v ...interface{}) {
+// log with fatal level
+func (l *SimpleLog) Fatal(v ...interface{}) {
 	l.Output(2, LevelFatal, "", v...)
 }
 
-//log with Trace level
-func (l *IotLog) Tracef(format string, v ...interface{}) {
+// log with Trace level
+func (l *SimpleLog) Tracef(format string, v ...interface{}) {
 	l.Output(2, LevelTrace, format, v...)
 }
 
-//log with Debug level
-func (l *IotLog) Debugf(format string, v ...interface{}) {
+// log with Debug level
+func (l *SimpleLog) Debugf(format string, v ...interface{}) {
 	l.Output(2, LevelDebug, format, v...)
 }
 
-//log with info level
-func (l *IotLog) Infof(format string, v ...interface{}) {
+// log with info level
+func (l *SimpleLog) Infof(format string, v ...interface{}) {
 	l.Output(2, LevelInfo, format, v...)
 }
 
-//log with warn level
-func (l *IotLog) Warnf(format string, v ...interface{}) {
+// log with warn level
+func (l *SimpleLog) Warnf(format string, v ...interface{}) {
 	l.Output(2, LevelWarn, format, v...)
 }
 
-//log with error level
-func (l *IotLog) Errorf(format string, v ...interface{}) {
+// log with error level
+func (l *SimpleLog) Errorf(format string, v ...interface{}) {
 	l.Output(2, LevelError, format, v...)
 }
 
-//log with fatal level
-func (l *IotLog) Fatalf(format string, v ...interface{}) {
+// log with fatal level
+func (l *SimpleLog) Fatalf(format string, v ...interface{}) {
 	l.Output(2, LevelFatal, format, v...)
 }
