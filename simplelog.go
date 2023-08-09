@@ -228,17 +228,25 @@ func (l *SimpleLog) Output(callDepth int, level int, format string, v ...interfa
 
 	buf := l.popBuf()
 
-	if l.flag&Llevel > 0 {
+	if (l.flag&Llevel > 0) || (l.flag&Ltime > 0) || (l.flag&Lfile > 0) {
 		buf = append(buf, '[')
+	}
+
+	if l.flag&Llevel > 0 {
 		buf = append(buf, LevelName[level]...)
-		buf = append(buf, "] "...)
+	}
+
+	if (l.flag&Llevel > 0) && (l.flag&Ltime > 0) {
+		buf = append(buf, " | "...)
 	}
 
 	if l.flag&Ltime > 0 {
 		now := time.Now().Format(TimeFormat)
-		buf = append(buf, '[')
 		buf = append(buf, now...)
-		buf = append(buf, "] "...)
+	}
+
+	if (l.flag&Ltime > 0) && (l.flag&Lfile > 0) {
+		buf = append(buf, " | "...)
 	}
 
 	if l.flag&Lfile > 0 {
@@ -259,7 +267,10 @@ func (l *SimpleLog) Output(callDepth int, level int, format string, v ...interfa
 		buf = append(buf, ':')
 
 		buf = strconv.AppendInt(buf, int64(line), 10)
-		buf = append(buf, ' ')
+
+		if (l.flag&Llevel > 0) || (l.flag&Ltime > 0) || (l.flag&Lfile > 0) {
+			buf = append(buf, "] "...)
+		}
 	}
 
 	buf = append(buf, s...)
