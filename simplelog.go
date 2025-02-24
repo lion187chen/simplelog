@@ -39,14 +39,14 @@ const (
 )
 
 const (
-	Ltime  = 1 << iota //print timestamp format as "2006/01/02 15:04:05"
+	Ltime  = 1 << iota //print timestamp format as "2006/01/02 15:04:05.000"
 	Lfile              // print file name and line format as file.go:123
 	Llevel             // print log level format as [Trace|Debug|Info...]
 )
 
 var LevelName [6]string = [6]string{"Trace", "Debug", "Info ", "Warn ", "Error", "Fatal"}
 
-const TimeFormat = "2006/01/02 15:04:05.999"
+const TimeFormat = "2006/01/02 15:04:05.000"
 
 const maxBufPoolSize = 16
 
