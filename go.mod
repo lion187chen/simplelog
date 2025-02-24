@@ -1,3 +1,3 @@
-module blacktea.vip.cpolar.top/OrgGo/simplelog
+module blacktea.cpolar.cn/OrgGo/simplelog
 
 go 1.21.0
