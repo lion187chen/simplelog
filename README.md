@@ -8,7 +8,7 @@ A very simple log system(golang).
 go get github.com/lion187chen/simplelog
 ```
 
-## Demo
+## Example
 
 ```go
 package main
