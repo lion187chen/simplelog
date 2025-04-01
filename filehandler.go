@@ -7,6 +7,16 @@ import (
 	"time"
 )
 
+func isFileExist(filename string) bool {
+	info, e := os.Stat(filename)
+
+	if e == nil {
+		return !info.IsDir()
+	} else {
+		return os.IsExist(e)
+	}
+}
+
 // FileHandler writes log to a file.
 type FileHandler struct {
 	fd *os.File
@@ -48,6 +58,25 @@ type RotatingFileHandler struct {
 }
 
 func (h *RotatingFileHandler) InitRotating(name string, maxBytes int, backupCount int) (*RotatingFileHandler, error) {
+	if isFileExist(name) {
+		var err error
+		h.fd, err = os.OpenFile(name, os.O_CREATE|os.O_RDONLY, 0666)
+		if err != nil {
+			return nil, err
+		}
+		f, err := h.fd.Stat()
+		if err != nil {
+			h.fd.Close()
+			return nil, err
+		}
+		if f.Size() > 0 {
+			h._doRollover()
+			return h, nil
+		} else {
+			h.fd.Close()
+		}
+	}
+
 	dir := path.Dir(name)
 	os.MkdirAll(dir, 0777)
 
@@ -106,6 +135,10 @@ func (h *RotatingFileHandler) doRollover() {
 		return
 	}
 
+	h._doRollover()
+}
+
+func (h *RotatingFileHandler) _doRollover() {
 	if h.backupCount > 0 {
 		h.fd.Close()
 
