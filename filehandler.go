@@ -2,6 +2,7 @@ package simplelog
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"time"
@@ -58,6 +59,10 @@ type RotatingFileHandler struct {
 }
 
 func (h *RotatingFileHandler) InitRotating(name string, maxBytes int, backupCount int) (*RotatingFileHandler, error) {
+	h.fileName = name
+	h.maxBytes = maxBytes
+	h.backupCount = backupCount
+
 	if isFileExist(name) {
 		var err error
 		h.fd, err = os.OpenFile(name, os.O_CREATE|os.O_RDONLY, 0666)
@@ -69,12 +74,12 @@ func (h *RotatingFileHandler) InitRotating(name string, maxBytes int, backupCoun
 			h.fd.Close()
 			return nil, err
 		}
-		if f.Size() > 0 {
-			h._doRollover()
-			return h, nil
+		if f.Size() < int64(h.maxBytes) {
+			h.fd.Seek(0, io.SeekEnd)
 		} else {
-			h.fd.Close()
+			h._doRollover()
 		}
+		return h, nil
 	}
 
 	dir := path.Dir(name)
@@ -83,10 +88,6 @@ func (h *RotatingFileHandler) InitRotating(name string, maxBytes int, backupCoun
 	if maxBytes <= 0 {
 		return nil, fmt.Errorf("invalid max bytes")
 	}
-
-	h.fileName = name
-	h.maxBytes = maxBytes
-	h.backupCount = backupCount
 
 	var err error
 	h.fd, err = os.OpenFile(name, os.O_CREATE|os.O_WRONLY, 0666)
