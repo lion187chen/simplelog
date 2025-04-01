@@ -6,12 +6,12 @@ import (
 	"github.com/lion187chen/simplelog"
 )
 
-func CreateLog(file string, LogLevel simplelog.LogLevel) *simplelog.SimpleLog {
+func CreateLog(file string, level simplelog.Level) *simplelog.Log {
 	switch file {
 	case "":
-		return new(simplelog.SimpleLog).InitStd(LogLevel, simplelog.Ltime|simplelog.Lfile|simplelog.Llevel)
+		return new(simplelog.Log).InitStd(level, simplelog.Ltime|simplelog.Lfile|simplelog.Llevel)
 	default:
-		return new(simplelog.SimpleLog).InitRotating(file, 1024*10, 10, LogLevel)
+		return new(simplelog.Log).InitRotating(file, 1024*10, 10, level)
 	}
 }
 
