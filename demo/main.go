@@ -6,12 +6,24 @@ import (
 	"github.com/lion187chen/simplelog"
 )
 
-var sl *simplelog.SimpleLog
+func CreateLog(file string, LogLevel simplelog.LogLevel) *simplelog.SimpleLog {
+	switch file {
+	case "":
+		return new(simplelog.SimpleLog).InitStd(LogLevel, simplelog.Ltime|simplelog.Lfile|simplelog.Llevel)
+	default:
+		return new(simplelog.SimpleLog).InitRotating(file, 1024*10, 10, LogLevel)
+	}
+}
 
 func main() {
-	sl = new(simplelog.SimpleLog).InitRotating("./log/MS.log", 1024*10, 10, simplelog.LevelTrace)
+	log := CreateLog("./log/MS.log", simplelog.LevelInfo)
 	for i := 0; i < 10000000; i++ {
-		sl.Debug("hello world")
+		log.Trace("hello world")
+		log.Debug("hello world")
+		log.Info("hello world")
+		log.Warn("hello world")
+		log.Error("hello world")
+		log.Fatal("hello world")
 		time.Sleep(8 * time.Millisecond)
 	}
 }

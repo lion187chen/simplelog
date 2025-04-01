@@ -28,9 +28,11 @@ import (
 	"time"
 )
 
+type LogLevel int
+
 // log level, from low to high, more higher means more serious
 const (
-	LevelTrace = iota
+	LevelTrace LogLevel = iota
 	LevelDebug
 	LevelInfo
 	LevelWarn
@@ -91,8 +93,8 @@ type SimpleLog struct {
 //	log.Lfile
 //	log.Llevel
 //	的组合
-func (l *SimpleLog) Init(handler StreamHandler, level, flag int) *SimpleLog {
-	l.level.Set(level)
+func (l *SimpleLog) Init(handler StreamHandler, level LogLevel, flag int) *SimpleLog {
+	l.level.Set(int(level))
 	l.handler = handler
 
 	l.flag = flag
@@ -103,7 +105,7 @@ func (l *SimpleLog) Init(handler StreamHandler, level, flag int) *SimpleLog {
 	return l
 }
 
-func (l *SimpleLog) InitStd(level, flag int) *SimpleLog {
+func (l *SimpleLog) InitStd(level LogLevel, flag int) *SimpleLog {
 	handler, e := NewStreamHandle(os.Stdout)
 	if e != nil {
 		panic(e)
@@ -112,7 +114,7 @@ func (l *SimpleLog) InitStd(level, flag int) *SimpleLog {
 	return l.Init(handler, level, flag)
 }
 
-func (l *SimpleLog) InitFile(name string, level, flag int) *SimpleLog {
+func (l *SimpleLog) InitFile(name string, level LogLevel, flag int) *SimpleLog {
 	handler, e := new(FileHandler).InitFile(name)
 	if e != nil {
 		panic(e)
@@ -121,7 +123,7 @@ func (l *SimpleLog) InitFile(name string, level, flag int) *SimpleLog {
 	return l.Init(handler, level, flag)
 }
 
-func (l *SimpleLog) InitRotating(name string, maxBytes, backupCount, level int) *SimpleLog {
+func (l *SimpleLog) InitRotating(name string, maxBytes, backupCount int, level LogLevel) *SimpleLog {
 	handler, e := new(RotatingFileHandler).InitRotating(name, maxBytes, backupCount)
 	if e != nil {
 		panic(e)
@@ -130,7 +132,7 @@ func (l *SimpleLog) InitRotating(name string, maxBytes, backupCount, level int) 
 	return l.Init(handler, level, Ltime|Lfile|Llevel)
 }
 
-func (l *SimpleLog) InitTimedRotating(name string, when int8, interval, level int) *SimpleLog {
+func (l *SimpleLog) InitTimedRotating(name string, when int8, interval int, level LogLevel) *SimpleLog {
 	handler, e := new(TimedRotatingFileHandler).InitTimedRotating(name, when, interval)
 	if e != nil {
 		panic(e)
@@ -172,8 +174,8 @@ func (l *SimpleLog) Close() {
 }
 
 // set log level, any log level less than it will not log
-func (l *SimpleLog) SetLevel(level int) {
-	l.level.Set(level)
+func (l *SimpleLog) SetLevel(level LogLevel) {
+	l.level.Set(int(level))
 }
 
 // name can be in ["trace", "debug", "info", "warn", "error", "fatal"]
@@ -208,13 +210,13 @@ func (l *SimpleLog) SetHandler(h StreamHandler) {
 	l.hMutex.Unlock()
 }
 
-func (l *SimpleLog) Output(callDepth int, level int, format string, v ...interface{}) {
+func (l *SimpleLog) Output(callDepth int, level LogLevel, format string, v ...interface{}) {
 	if l.closed.Get() == 1 {
 		// closed
 		return
 	}
 
-	if l.level.Get() > level {
+	if l.level.Get() > int(level) {
 		// higher level can be logged
 		return
 	}
