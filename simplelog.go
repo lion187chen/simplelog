@@ -28,11 +28,11 @@ import (
 	"time"
 )
 
-type LogLevel int
+type Level int
 
 // log level, from low to high, more higher means more serious
 const (
-	LevelTrace LogLevel = iota
+	LevelTrace Level = iota
 	LevelDebug
 	LevelInfo
 	LevelWarn
@@ -62,7 +62,7 @@ func (i *atomicInt32) Get() int {
 	return int(atomic.LoadInt32((*int32)(i)))
 }
 
-type SimpleLog struct {
+type Log struct {
 	level atomicInt32
 	flag  int
 
@@ -93,7 +93,7 @@ type SimpleLog struct {
 //	log.Lfile
 //	log.Llevel
 //	的组合
-func (l *SimpleLog) Init(handler StreamHandler, level LogLevel, flag int) *SimpleLog {
+func (l *Log) Init(handler StreamHandler, level Level, flag int) *Log {
 	l.level.Set(int(level))
 	l.handler = handler
 
@@ -105,7 +105,7 @@ func (l *SimpleLog) Init(handler StreamHandler, level LogLevel, flag int) *Simpl
 	return l
 }
 
-func (l *SimpleLog) InitStd(level LogLevel, flag int) *SimpleLog {
+func (l *Log) InitStd(level Level, flag int) *Log {
 	handler, e := NewStreamHandle(os.Stdout)
 	if e != nil {
 		panic(e)
@@ -114,7 +114,7 @@ func (l *SimpleLog) InitStd(level LogLevel, flag int) *SimpleLog {
 	return l.Init(handler, level, flag)
 }
 
-func (l *SimpleLog) InitFile(name string, level LogLevel, flag int) *SimpleLog {
+func (l *Log) InitFile(name string, level Level, flag int) *Log {
 	handler, e := new(FileHandler).InitFile(name)
 	if e != nil {
 		panic(e)
@@ -123,7 +123,7 @@ func (l *SimpleLog) InitFile(name string, level LogLevel, flag int) *SimpleLog {
 	return l.Init(handler, level, flag)
 }
 
-func (l *SimpleLog) InitRotating(name string, maxBytes, backupCount int, level LogLevel) *SimpleLog {
+func (l *Log) InitRotating(name string, maxBytes, backupCount int, level Level) *Log {
 	handler, e := new(RotatingFileHandler).InitRotating(name, maxBytes, backupCount)
 	if e != nil {
 		panic(e)
@@ -132,7 +132,7 @@ func (l *SimpleLog) InitRotating(name string, maxBytes, backupCount int, level L
 	return l.Init(handler, level, Ltime|Lfile|Llevel)
 }
 
-func (l *SimpleLog) InitTimedRotating(name string, when int8, interval int, level LogLevel) *SimpleLog {
+func (l *Log) InitTimedRotating(name string, when int8, interval int, level Level) *Log {
 	handler, e := new(TimedRotatingFileHandler).InitTimedRotating(name, when, interval)
 	if e != nil {
 		panic(e)
@@ -141,7 +141,7 @@ func (l *SimpleLog) InitTimedRotating(name string, when int8, interval int, leve
 	return l.Init(handler, level, Ltime|Lfile|Llevel)
 }
 
-func (l *SimpleLog) popBuf() []byte {
+func (l *Log) popBuf() []byte {
 	l.bufMutex.Lock()
 	var buf []byte
 	if len(l.bufs) == 0 {
@@ -155,7 +155,7 @@ func (l *SimpleLog) popBuf() []byte {
 	return buf
 }
 
-func (l *SimpleLog) putBuf(buf []byte) {
+func (l *Log) putBuf(buf []byte) {
 	l.bufMutex.Lock()
 	if len(l.bufs) < maxBufPoolSize {
 		buf = buf[0:0]
@@ -164,7 +164,7 @@ func (l *SimpleLog) putBuf(buf []byte) {
 	l.bufMutex.Unlock()
 }
 
-func (l *SimpleLog) Close() {
+func (l *Log) Close() {
 	if l.closed.Get() == 1 {
 		return
 	}
@@ -174,12 +174,12 @@ func (l *SimpleLog) Close() {
 }
 
 // set log level, any log level less than it will not log
-func (l *SimpleLog) SetLevel(level LogLevel) {
+func (l *Log) SetLevel(level Level) {
 	l.level.Set(int(level))
 }
 
 // name can be in ["trace", "debug", "info", "warn", "error", "fatal"]
-func (l *SimpleLog) SetLevelByName(name string) {
+func (l *Log) SetLevelByName(name string) {
 	name = strings.ToLower(name)
 	switch name {
 	case "trace":
@@ -197,7 +197,7 @@ func (l *SimpleLog) SetLevelByName(name string) {
 	}
 }
 
-func (l *SimpleLog) SetHandler(h StreamHandler) {
+func (l *Log) SetHandler(h StreamHandler) {
 	if l.closed.Get() == 1 {
 		return
 	}
@@ -210,7 +210,7 @@ func (l *SimpleLog) SetHandler(h StreamHandler) {
 	l.hMutex.Unlock()
 }
 
-func (l *SimpleLog) Output(callDepth int, level LogLevel, format string, v ...interface{}) {
+func (l *Log) Output(callDepth int, level Level, format string, v ...interface{}) {
 	if l.closed.Get() == 1 {
 		// closed
 		return
@@ -290,61 +290,61 @@ func (l *SimpleLog) Output(callDepth int, level LogLevel, format string, v ...in
 }
 
 // log with Trace level
-func (l *SimpleLog) Trace(v ...interface{}) {
+func (l *Log) Trace(v ...interface{}) {
 	l.Output(2, LevelTrace, "", v...)
 }
 
 // log with Debug level
-func (l *SimpleLog) Debug(v ...interface{}) {
+func (l *Log) Debug(v ...interface{}) {
 	l.Output(2, LevelDebug, "", v...)
 }
 
 // log with info level
-func (l *SimpleLog) Info(v ...interface{}) {
+func (l *Log) Info(v ...interface{}) {
 	l.Output(2, LevelInfo, "", v...)
 }
 
 // log with warn level
-func (l *SimpleLog) Warn(v ...interface{}) {
+func (l *Log) Warn(v ...interface{}) {
 	l.Output(2, LevelWarn, "", v...)
 }
 
 // log with error level
-func (l *SimpleLog) Error(v ...interface{}) {
+func (l *Log) Error(v ...interface{}) {
 	l.Output(2, LevelError, "", v...)
 }
 
 // log with fatal level
-func (l *SimpleLog) Fatal(v ...interface{}) {
+func (l *Log) Fatal(v ...interface{}) {
 	l.Output(2, LevelFatal, "", v...)
 }
 
 // log with Trace level
-func (l *SimpleLog) Tracef(format string, v ...interface{}) {
+func (l *Log) Tracef(format string, v ...interface{}) {
 	l.Output(2, LevelTrace, format, v...)
 }
 
 // log with Debug level
-func (l *SimpleLog) Debugf(format string, v ...interface{}) {
+func (l *Log) Debugf(format string, v ...interface{}) {
 	l.Output(2, LevelDebug, format, v...)
 }
 
 // log with info level
-func (l *SimpleLog) Infof(format string, v ...interface{}) {
+func (l *Log) Infof(format string, v ...interface{}) {
 	l.Output(2, LevelInfo, format, v...)
 }
 
 // log with warn level
-func (l *SimpleLog) Warnf(format string, v ...interface{}) {
+func (l *Log) Warnf(format string, v ...interface{}) {
 	l.Output(2, LevelWarn, format, v...)
 }
 
 // log with error level
-func (l *SimpleLog) Errorf(format string, v ...interface{}) {
+func (l *Log) Errorf(format string, v ...interface{}) {
 	l.Output(2, LevelError, format, v...)
 }
 
 // log with fatal level
-func (l *SimpleLog) Fatalf(format string, v ...interface{}) {
+func (l *Log) Fatalf(format string, v ...interface{}) {
 	l.Output(2, LevelFatal, format, v...)
 }
