@@ -123,7 +123,7 @@ func (l *Log) InitFile(name string, level Level, flag int) *Log {
 	return l.Init(handler, level, flag)
 }
 
-func (l *Log) InitRotating(name string, maxBytes, backupCount int, level Level) *Log {
+func (l *Log) InitRotating(name string, maxBytes int64, backupCount uint, level Level) *Log {
 	handler, e := new(RotatingFileHandler).InitRotating(name, maxBytes, backupCount)
 	if e != nil {
 		panic(e)
@@ -132,8 +132,17 @@ func (l *Log) InitRotating(name string, maxBytes, backupCount int, level Level) 
 	return l.Init(handler, level, Ltime|Lfile|Llevel)
 }
 
-func (l *Log) InitTimedRotating(name string, when int8, interval int, level Level) *Log {
-	handler, e := new(TimedRotatingFileHandler).InitTimedRotating(name, when, interval)
+func (l *Log) InitTimed(name string, when WhenInterval, interval int64, level Level) *Log {
+	handler, e := new(TimedFileHandler).InitTimed(name, when, interval)
+	if e != nil {
+		panic(e)
+	}
+
+	return l.Init(handler, level, Ltime|Lfile|Llevel)
+}
+
+func (l *Log) InitTimedRotating(name string, when WhenInterval, interval int64, backupCount uint, level Level) *Log {
+	handler, e := new(TimedRotatingFileHandler).InitTimedRotating(name, when, interval, backupCount)
 	if e != nil {
 		panic(e)
 	}
