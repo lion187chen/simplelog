@@ -114,13 +114,13 @@ func (l *Log) InitStd(level Level, flag int) *Log {
 	return l.Init(handler, level, flag)
 }
 
-func (l *Log) InitFile(name string, level Level, flag int) *Log {
+func (l *Log) InitFile(name string, level Level) *Log {
 	handler, e := new(FileHandler).InitFile(name)
 	if e != nil {
 		panic(e)
 	}
 
-	return l.Init(handler, level, flag)
+	return l.Init(handler, level, Ltime|Lfile|Llevel)
 }
 
 func (l *Log) InitRotating(name string, maxBytes int64, backupCount uint, level Level) *Log {

@@ -6,48 +6,109 @@ import (
 	"github.com/lion187chen/simplelog"
 )
 
-func CreateLog(file string, level simplelog.Level) *simplelog.Log {
-	switch file {
-	case "":
-		return new(simplelog.Log).InitStd(level, simplelog.Ltime|simplelog.Lfile|simplelog.Llevel)
-	default:
-		return new(simplelog.Log).InitRotating(file, 1024*10, 10, level)
-	}
-}
-
 func test_timed(name string) {
 	log := new(simplelog.Log).InitTimed(name, simplelog.WhenMinute, 2, simplelog.LevelDebug)
 	n := time.Now()
 	for time.Since(n) < 10*time.Minute {
+		log.Trace("hello world")
+		time.Sleep(100 * time.Millisecond)
 		log.Debug("hello world")
-		time.Sleep(30 * time.Second)
+		time.Sleep(100 * time.Millisecond)
+		log.Info("hello world")
+		time.Sleep(100 * time.Millisecond)
+		log.Warn("hello world")
+		time.Sleep(100 * time.Millisecond)
+		log.Error("hello world")
+		time.Sleep(100 * time.Millisecond)
+		log.Fatal("hello world")
+		time.Sleep(100 * time.Millisecond)
 	}
+	log.Close()
 }
 
 func test_timedRotating(name string) {
 	log := new(simplelog.Log).InitTimedRotating(name, simplelog.WhenMinute, 2, 3, simplelog.LevelDebug)
 	n := time.Now()
 	for time.Since(n) < 10*time.Minute {
+		log.Trace("hello world")
+		time.Sleep(100 * time.Millisecond)
 		log.Debug("hello world")
-		time.Sleep(30 * time.Second)
+		time.Sleep(100 * time.Millisecond)
+		log.Info("hello world")
+		time.Sleep(100 * time.Millisecond)
+		log.Warn("hello world")
+		time.Sleep(100 * time.Millisecond)
+		log.Error("hello world")
+		time.Sleep(100 * time.Millisecond)
+		log.Fatal("hello world")
+		time.Sleep(100 * time.Millisecond)
 	}
+	log.Close()
 }
 
 func test_rotating(name string) {
-	log := CreateLog(name, simplelog.LevelInfo)
+	log := new(simplelog.Log).InitRotating(name, 1024*10, 10, simplelog.LevelInfo)
 	for i := 0; i < 10000000; i++ {
 		log.Trace("hello world")
+		time.Sleep(100 * time.Millisecond)
 		log.Debug("hello world")
+		time.Sleep(100 * time.Millisecond)
 		log.Info("hello world")
+		time.Sleep(100 * time.Millisecond)
 		log.Warn("hello world")
+		time.Sleep(100 * time.Millisecond)
 		log.Error("hello world")
+		time.Sleep(100 * time.Millisecond)
 		log.Fatal("hello world")
-		time.Sleep(8 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
+	log.Close()
+}
+
+func test_file(name string) {
+	log := new(simplelog.Log).InitFile(name, simplelog.LevelDebug)
+	n := time.Now()
+	for time.Since(n) < 10*time.Minute {
+		log.Trace("hello world")
+		time.Sleep(100 * time.Millisecond)
+		log.Debug("hello world")
+		time.Sleep(100 * time.Millisecond)
+		log.Info("hello world")
+		time.Sleep(100 * time.Millisecond)
+		log.Warn("hello world")
+		time.Sleep(100 * time.Millisecond)
+		log.Error("hello world")
+		time.Sleep(100 * time.Millisecond)
+		log.Fatal("hello world")
+		time.Sleep(100 * time.Millisecond)
+	}
+	log.Close()
+}
+
+func test_std() {
+	log := new(simplelog.Log).InitStd(simplelog.LevelDebug, simplelog.Ltime|simplelog.Lfile|simplelog.Llevel)
+	n := time.Now()
+	for time.Since(n) < 10*time.Minute {
+		log.Trace("hello world")
+		time.Sleep(100 * time.Millisecond)
+		log.Debug("hello world")
+		time.Sleep(100 * time.Millisecond)
+		log.Info("hello world")
+		time.Sleep(100 * time.Millisecond)
+		log.Warn("hello world")
+		time.Sleep(100 * time.Millisecond)
+		log.Error("hello world")
+		time.Sleep(100 * time.Millisecond)
+		log.Fatal("hello world")
+		time.Sleep(100 * time.Millisecond)
+	}
+	log.Close()
 }
 
 func main() {
-	go test_rotating("./log/demo.log")
+	go test_std()
+	go test_file("./log/demo.log")
+	go test_rotating("./rlog/demo.log")
 	go test_timedRotating("./trlog/demo.log")
 	test_timed("./tlog/demo.log")
 }
