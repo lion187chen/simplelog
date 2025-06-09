@@ -11,10 +11,11 @@ import (
 
 // FileHandler writes log to a file.
 type FileHandler struct {
-	fd *os.File
+	custom string
+	fd     *os.File
 }
 
-func (h *FileHandler) InitFile(name string) (*FileHandler, error) {
+func (h *FileHandler) InitFile(name, custom string) (*FileHandler, error) {
 	dir := path.Dir(name)
 	os.Mkdir(dir, 0777)
 
@@ -23,21 +24,22 @@ func (h *FileHandler) InitFile(name string) (*FileHandler, error) {
 	if err != nil {
 		return nil, err
 	}
-	h.fd.Write([]byte("[StartLog | " + time.Now().Format(TimeFormat) + " | SimpleLog]\n"))
+	h.custom = custom
+	h.fd.Write([]byte("[StartLog | " + time.Now().Format(TimeFormat) + " | File] " + h.custom + "\n"))
 
 	return h, nil
 }
 
 func (h *FileHandler) Write(b []byte) (n int, err error) {
 	n, err = h.fd.Write(b)
-	p, _ := h.fd.Write([]byte("[EndLog | " + time.Now().Format(TimeFormat) + " | SimpleLog]\n"))
+	p, _ := h.fd.Write([]byte("[EndLog | " + time.Now().Format(TimeFormat) + " | File] " + h.custom + "\n"))
 	h.fd.Seek(int64(-p), 1)
 	return n, err
 }
 
 func (h *FileHandler) Close() error {
 	if h.fd != nil {
-		h.fd.Write([]byte("[EndLog | " + time.Now().Format(TimeFormat) + " | SimpleLog]\n"))
+		h.fd.Write([]byte("[EndLog | " + time.Now().Format(TimeFormat) + " | File] " + h.custom + "\n"))
 		return h.fd.Close()
 	}
 	return nil
@@ -50,6 +52,7 @@ func (h *FileHandler) Close() error {
 type RotatingFileHandler struct {
 	fd *os.File
 
+	custom      string
 	dir         string
 	name        string
 	maxBytes    int64
@@ -57,7 +60,7 @@ type RotatingFileHandler struct {
 	backupCount uint
 }
 
-func (h *RotatingFileHandler) InitRotating(name string, maxBytes int64, backupCount uint) (*RotatingFileHandler, error) {
+func (h *RotatingFileHandler) InitRotating(name, custom string, maxBytes int64, backupCount uint) (*RotatingFileHandler, error) {
 	h.maxBytes = maxBytes
 	h.backupCount = backupCount
 
@@ -81,8 +84,9 @@ func (h *RotatingFileHandler) InitRotating(name string, maxBytes int64, backupCo
 		h.fd.Close()
 		return nil, err
 	}
+	h.custom = custom
 	h.curBytes = f.Size()
-	n, _ := h.fd.Write([]byte("[StartLog | " + time.Now().Format(TimeFormat) + " | SimpleLog]\n"))
+	n, _ := h.fd.Write([]byte("[StartLog | " + time.Now().Format(TimeFormat) + " | RotatingFile] " + h.custom + "\n"))
 	h.curBytes += int64(n)
 
 	return h, nil
@@ -97,7 +101,7 @@ func (h *RotatingFileHandler) Write(p []byte) (n int, err error) {
 
 func (h *RotatingFileHandler) Close() error {
 	if h.fd != nil {
-		h.fd.Write([]byte("[EndLog | " + time.Now().Format(TimeFormat) + " | SimpleLog]\n"))
+		h.fd.Write([]byte("[EndLog | " + time.Now().Format(TimeFormat) + " | RotatingFile] " + h.custom + "\n"))
 		return h.fd.Close()
 	}
 	return nil
@@ -127,7 +131,7 @@ func (h *RotatingFileHandler) doRollover() {
 func (h *RotatingFileHandler) _doRollover(firstOpen bool) {
 	if h.backupCount > 0 {
 		if !firstOpen {
-			h.fd.Write([]byte("[Rotate | " + time.Now().Format(TimeFormat) + " | SimpleLog]\n"))
+			h.fd.Write([]byte("[Rotate | " + time.Now().Format(TimeFormat) + " | RotatingFile] " + h.custom + "\n"))
 		}
 		h.fd.Close()
 
@@ -145,15 +149,15 @@ func (h *RotatingFileHandler) _doRollover(firstOpen bool) {
 		os.Rename(filepath.Join(h.dir, h.name), dfn)
 
 		h.fd, _ = os.OpenFile(filepath.Join(h.dir, h.name), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
-		n, _ := h.fd.Write([]byte("[StartFile | " + time.Now().Format(TimeFormat) + " | SimpleLog]\n"))
+		n, _ := h.fd.Write([]byte("[StartFile | " + time.Now().Format(TimeFormat) + " | RotatingFile] " + h.custom + "\n"))
 		h.curBytes = int64(n)
 	} else {
 		if !firstOpen {
-			h.fd.Write([]byte("[Rotate | " + time.Now().Format(TimeFormat) + " | SimpleLog]\n"))
+			h.fd.Write([]byte("[Rotate | " + time.Now().Format(TimeFormat) + " | RotatingFile] " + h.custom + "\n"))
 		}
 		h.fd.Close()
 		h.fd, _ = os.OpenFile(filepath.Join(h.dir, h.name), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
-		n, _ := h.fd.Write([]byte("[StartFile | " + time.Now().Format(TimeFormat) + " | SimpleLog]\n"))
+		n, _ := h.fd.Write([]byte("[StartFile | " + time.Now().Format(TimeFormat) + " | RotatingFile] " + h.custom + "\n"))
 		h.curBytes = int64(n)
 	}
 }
@@ -162,6 +166,7 @@ func (h *RotatingFileHandler) _doRollover(firstOpen bool) {
 type TimedFileHandler struct {
 	fd *os.File
 
+	custom     string
 	dir        string
 	name       string
 	interval   time.Duration
@@ -178,7 +183,7 @@ const (
 	WhenDay
 )
 
-func (h *TimedFileHandler) InitTimed(name string, when WhenInterval, interval int64) (*TimedFileHandler, error) {
+func (h *TimedFileHandler) InitTimed(name, custom string, when WhenInterval, interval int64) (*TimedFileHandler, error) {
 	dir := path.Dir(name)
 	os.Mkdir(dir, 0777)
 
@@ -211,7 +216,8 @@ func (h *TimedFileHandler) InitTimed(name string, when WhenInterval, interval in
 		return nil, err
 	}
 
-	h.fd.Write([]byte("[StartLog | " + time.Now().Format(TimeFormat) + " | SimpleLog] Current File: " + file + "\n"))
+	h.custom = custom
+	h.fd.Write([]byte("[StartLog | " + time.Now().Format(TimeFormat) + " | Current:" + file + "] " + h.custom + "\n"))
 
 	return h, nil
 }
@@ -220,11 +226,11 @@ func (h *TimedFileHandler) doRollover() {
 	if time.Since(h.rolloverAt) > time.Duration(h.interval) {
 		h.rolloverAt = time.Now()
 		file := h.rolloverAt.Format(h.suffix) + "_" + h.name
-		h.fd.Write([]byte("[Rotate | " + time.Now().Format(TimeFormat) + " | SimpleLog] Next File: " + file + "\n"))
+		h.fd.Write([]byte("[Rotate | " + time.Now().Format(TimeFormat) + " | Next:" + file + "] " + h.custom + "\n"))
 
 		h.fd.Close()
 		h.fd, _ = os.OpenFile(filepath.Join(h.dir, file), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-		h.fd.Write([]byte("[StartFile | " + time.Now().Format(TimeFormat) + " | SimpleLog] Current File: " + file + "\n"))
+		h.fd.Write([]byte("[StartLog | " + time.Now().Format(TimeFormat) + " | Current:" + file + "] " + h.custom + "\n"))
 	}
 }
 
@@ -234,13 +240,14 @@ func (h *TimedFileHandler) Write(b []byte) (n int, err error) {
 }
 
 func (h *TimedFileHandler) Close() error {
-	h.fd.Write([]byte("[EndLog | " + time.Now().Format(TimeFormat) + " | SimpleLog]\n"))
+	h.fd.Write([]byte("[EndLog | " + time.Now().Format(TimeFormat) + " | TimedFile]" + h.custom + "\n"))
 	return h.fd.Close()
 }
 
 type TimedRotatingFileHandler struct {
 	fd *os.File
 
+	custom      string
 	dir         string
 	name        string
 	interval    time.Duration
@@ -249,7 +256,7 @@ type TimedRotatingFileHandler struct {
 	backupCount uint
 }
 
-func (h *TimedRotatingFileHandler) InitTimedRotating(name string, when WhenInterval, interval int64, backupCount uint) (*TimedRotatingFileHandler, error) {
+func (h *TimedRotatingFileHandler) InitTimedRotating(name, custom string, when WhenInterval, interval int64, backupCount uint) (*TimedRotatingFileHandler, error) {
 	h.backupCount = backupCount
 	dir := path.Dir(name)
 	os.Mkdir(dir, 0777)
@@ -283,7 +290,8 @@ func (h *TimedRotatingFileHandler) InitTimedRotating(name string, when WhenInter
 		return nil, err
 	}
 
-	h.fd.Write([]byte("[StartLog | " + time.Now().Format(TimeFormat) + " | SimpleLog] Current File: " + file + "\n"))
+	h.custom = custom
+	h.fd.Write([]byte("[StartLog | " + time.Now().Format(TimeFormat) + " | Current:" + file + "] " + h.custom + "\n"))
 
 	h._doRollover()
 	return h, nil
@@ -305,12 +313,12 @@ func (h *TimedRotatingFileHandler) doRollover() {
 	if time.Since(h.rolloverAt) > time.Duration(h.interval) {
 		h.rolloverAt = time.Now()
 		file := h.rolloverAt.Format(h.suffix) + "_" + h.name
-		h.fd.Write([]byte("[Rotate | " + time.Now().Format(TimeFormat) + " | SimpleLog] Next File: " + file + "\n"))
+		h.fd.Write([]byte("[Rotate | " + time.Now().Format(TimeFormat) + " | Next:" + file + "]  " + h.custom + "\n"))
 
 		h.fd.Close()
 		h.rolloverAt = time.Now()
 		h.fd, _ = os.OpenFile(filepath.Join(h.dir, file), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-		h.fd.Write([]byte("[StartFile | " + time.Now().Format(TimeFormat) + " | SimpleLog] Current File: " + file + "\n"))
+		h.fd.Write([]byte("[StartLog | " + time.Now().Format(TimeFormat) + " | Current:" + file + "] " + h.custom + "\n"))
 	}
 	h._doRollover()
 }
@@ -321,7 +329,7 @@ func (h *TimedRotatingFileHandler) Write(b []byte) (n int, err error) {
 }
 
 func (h *TimedRotatingFileHandler) Close() error {
-	h.fd.Write([]byte("[EndFile | " + time.Now().Format(TimeFormat) + " | SimpleLog]"))
+	h.fd.Write([]byte("[EndFile | " + time.Now().Format(TimeFormat) + " | TimedRotating]" + h.custom + ""))
 	return h.fd.Close()
 }
 

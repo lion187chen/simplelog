@@ -7,7 +7,7 @@ import (
 )
 
 func test_timed(name string) {
-	log := new(simplelog.Log).InitTimed(name, simplelog.WhenMinute, 2, simplelog.LevelDebug)
+	log := new(simplelog.Log).InitTimed(name, "v1.0.0", simplelog.WhenMinute, 2, simplelog.LevelDebug)
 	n := time.Now()
 	for time.Since(n) < 10*time.Minute {
 		log.Trace("hello world")
@@ -27,7 +27,7 @@ func test_timed(name string) {
 }
 
 func test_timedRotating(name string) {
-	log := new(simplelog.Log).InitTimedRotating(name, simplelog.WhenMinute, 2, 3, simplelog.LevelDebug)
+	log := new(simplelog.Log).InitTimedRotating(name, "v1.0.0", simplelog.WhenMinute, 2, 3, simplelog.LevelDebug)
 	n := time.Now()
 	for time.Since(n) < 10*time.Minute {
 		log.Trace("hello world")
@@ -47,7 +47,7 @@ func test_timedRotating(name string) {
 }
 
 func test_rotating(name string) {
-	log := new(simplelog.Log).InitRotating(name, 1024*10, 10, simplelog.LevelInfo)
+	log := new(simplelog.Log).InitRotating(name, "v1.0.0", 1024*10, 10, simplelog.LevelInfo)
 	for i := 0; i < 10000000; i++ {
 		log.Trace("hello world")
 		time.Sleep(100 * time.Millisecond)
@@ -66,7 +66,7 @@ func test_rotating(name string) {
 }
 
 func test_file(name string) {
-	log := new(simplelog.Log).InitFile(name, simplelog.LevelDebug)
+	log := new(simplelog.Log).InitFile(name, "v1.0.0", simplelog.LevelDebug)
 	n := time.Now()
 	for time.Since(n) < 10*time.Minute {
 		log.Trace("hello world")

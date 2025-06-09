@@ -114,8 +114,8 @@ func (l *Log) InitStd(level Level, flag int) *Log {
 	return l.Init(handler, level, flag)
 }
 
-func (l *Log) InitFile(name string, level Level) *Log {
-	handler, e := new(FileHandler).InitFile(name)
+func (l *Log) InitFile(name, custom string, level Level) *Log {
+	handler, e := new(FileHandler).InitFile(name, custom)
 	if e != nil {
 		panic(e)
 	}
@@ -123,8 +123,8 @@ func (l *Log) InitFile(name string, level Level) *Log {
 	return l.Init(handler, level, Ltime|Lfile|Llevel)
 }
 
-func (l *Log) InitRotating(name string, maxBytes int64, backupCount uint, level Level) *Log {
-	handler, e := new(RotatingFileHandler).InitRotating(name, maxBytes, backupCount)
+func (l *Log) InitRotating(name, custom string, maxBytes int64, backupCount uint, level Level) *Log {
+	handler, e := new(RotatingFileHandler).InitRotating(name, custom, maxBytes, backupCount)
 	if e != nil {
 		panic(e)
 	}
@@ -132,8 +132,8 @@ func (l *Log) InitRotating(name string, maxBytes int64, backupCount uint, level 
 	return l.Init(handler, level, Ltime|Lfile|Llevel)
 }
 
-func (l *Log) InitTimed(name string, when WhenInterval, interval int64, level Level) *Log {
-	handler, e := new(TimedFileHandler).InitTimed(name, when, interval)
+func (l *Log) InitTimed(name, custom string, when WhenInterval, interval int64, level Level) *Log {
+	handler, e := new(TimedFileHandler).InitTimed(name, custom, when, interval)
 	if e != nil {
 		panic(e)
 	}
@@ -141,8 +141,8 @@ func (l *Log) InitTimed(name string, when WhenInterval, interval int64, level Le
 	return l.Init(handler, level, Ltime|Lfile|Llevel)
 }
 
-func (l *Log) InitTimedRotating(name string, when WhenInterval, interval int64, backupCount uint, level Level) *Log {
-	handler, e := new(TimedRotatingFileHandler).InitTimedRotating(name, when, interval, backupCount)
+func (l *Log) InitTimedRotating(name, custom string, when WhenInterval, interval int64, backupCount uint, level Level) *Log {
+	handler, e := new(TimedRotatingFileHandler).InitTimedRotating(name, custom, when, interval, backupCount)
 	if e != nil {
 		panic(e)
 	}
