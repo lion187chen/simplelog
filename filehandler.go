@@ -50,14 +50,14 @@ func (h *FileHandler) Close() error {
 type RotatingFileHandler struct {
 	fd *os.File
 
-	fileName    string
+	dir         string
+	name        string
 	maxBytes    int64
 	curBytes    int64
 	backupCount uint
 }
 
 func (h *RotatingFileHandler) InitRotating(name string, maxBytes int64, backupCount uint) (*RotatingFileHandler, error) {
-	h.fileName = name
 	h.maxBytes = maxBytes
 	h.backupCount = backupCount
 
@@ -68,9 +68,7 @@ func (h *RotatingFileHandler) InitRotating(name string, maxBytes int64, backupCo
 	dir := path.Dir(name)
 	os.MkdirAll(dir, 0777)
 
-	if h.maxBytes < 1024 {
-		return nil, fmt.Errorf("max bytes must be greater than 1024")
-	}
+	h.dir, h.name = filepath.Split(name)
 
 	var err error
 	h.fd, err = os.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
@@ -134,16 +132,19 @@ func (h *RotatingFileHandler) _doRollover(firstOpen bool) {
 		h.fd.Close()
 
 		for i := h.backupCount - 1; i > 0; i-- {
-			sfn := fmt.Sprintf("%s.%d", h.fileName, i)
-			dfn := fmt.Sprintf("%s.%d", h.fileName, i+1)
+			sfn := fmt.Sprintf("%d_%s", i, h.name)
+			sfn = filepath.Join(h.dir, sfn)
+			dfn := fmt.Sprintf("%d_%s", i+1, h.name)
+			dfn = filepath.Join(h.dir, dfn)
 
 			os.Rename(sfn, dfn)
 		}
 
-		dfn := fmt.Sprintf("%s.1", h.fileName)
-		os.Rename(h.fileName, dfn)
+		dfn := fmt.Sprintf("1_%s", h.name)
+		dfn = filepath.Join(h.dir, dfn)
+		os.Rename(filepath.Join(h.dir, h.name), dfn)
 
-		h.fd, _ = os.OpenFile(h.fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+		h.fd, _ = os.OpenFile(filepath.Join(h.dir, h.name), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 		n, _ := h.fd.Write([]byte("[StartFile | " + time.Now().Format(TimeFormat) + " | SimpleLog]\n"))
 		h.curBytes = int64(n)
 	} else {
@@ -151,7 +152,7 @@ func (h *RotatingFileHandler) _doRollover(firstOpen bool) {
 			h.fd.Write([]byte("[Rotate | " + time.Now().Format(TimeFormat) + " | SimpleLog]\n"))
 		}
 		h.fd.Close()
-		h.fd, _ = os.OpenFile(h.fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+		h.fd, _ = os.OpenFile(filepath.Join(h.dir, h.name), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 		n, _ := h.fd.Write([]byte("[StartFile | " + time.Now().Format(TimeFormat) + " | SimpleLog]\n"))
 		h.curBytes = int64(n)
 	}
