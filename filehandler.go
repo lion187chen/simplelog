@@ -210,7 +210,7 @@ func (h *TimedFileHandler) InitTimed(name string, when WhenInterval, interval in
 		return nil, err
 	}
 
-	h.fd.Write([]byte("[StartLog | " + time.Now().Format(TimeFormat) + " | SimpleLog] Current File:" + file + "\n"))
+	h.fd.Write([]byte("[StartLog | " + time.Now().Format(TimeFormat) + " | SimpleLog] Current File: " + file + "\n"))
 
 	return h, nil
 }
@@ -219,11 +219,11 @@ func (h *TimedFileHandler) doRollover() {
 	if time.Since(h.rolloverAt) > time.Duration(h.interval) {
 		h.rolloverAt = time.Now()
 		file := h.rolloverAt.Format(h.suffix) + "_" + h.name
-		h.fd.Write([]byte("[Rotate | " + time.Now().Format(TimeFormat) + " | SimpleLog] Next File:" + file + "\n"))
+		h.fd.Write([]byte("[Rotate | " + time.Now().Format(TimeFormat) + " | SimpleLog] Next File: " + file + "\n"))
 
 		h.fd.Close()
 		h.fd, _ = os.OpenFile(filepath.Join(h.dir, file), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-		h.fd.Write([]byte("[StartFile | " + time.Now().Format(TimeFormat) + " | SimpleLog] Current File:" + file + "\n"))
+		h.fd.Write([]byte("[StartFile | " + time.Now().Format(TimeFormat) + " | SimpleLog] Current File: " + file + "\n"))
 	}
 }
 
@@ -282,7 +282,7 @@ func (h *TimedRotatingFileHandler) InitTimedRotating(name string, when WhenInter
 		return nil, err
 	}
 
-	h.fd.Write([]byte("[StartLog | " + time.Now().Format(TimeFormat) + " | SimpleLog] Current File:" + file + "\n"))
+	h.fd.Write([]byte("[StartLog | " + time.Now().Format(TimeFormat) + " | SimpleLog] Current File: " + file + "\n"))
 
 	h._doRollover()
 	return h, nil
@@ -304,12 +304,12 @@ func (h *TimedRotatingFileHandler) doRollover() {
 	if time.Since(h.rolloverAt) > time.Duration(h.interval) {
 		h.rolloverAt = time.Now()
 		file := h.rolloverAt.Format(h.suffix) + "_" + h.name
-		h.fd.Write([]byte("[Rotate | " + time.Now().Format(TimeFormat) + " | SimpleLog] Next File:" + file + "\n"))
+		h.fd.Write([]byte("[Rotate | " + time.Now().Format(TimeFormat) + " | SimpleLog] Next File: " + file + "\n"))
 
 		h.fd.Close()
 		h.rolloverAt = time.Now()
 		h.fd, _ = os.OpenFile(filepath.Join(h.dir, file), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-		h.fd.Write([]byte("[StartFile | " + time.Now().Format(TimeFormat) + " | SimpleLog] Current File:" + file + "\n"))
+		h.fd.Write([]byte("[StartFile | " + time.Now().Format(TimeFormat) + " | SimpleLog] Current File: " + file + "\n"))
 	}
 	h._doRollover()
 }
